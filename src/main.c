@@ -851,7 +851,7 @@ void draw_Bitmap (int16_t x, int16_t y,const uint8_t *bitmap, int16_t w, int16_t
   }
 }
 
-void drawRGBBitmap_1 (int16_t x, int16_t y, uint8_t *bitmap,int16_t w, int16_t h) 
+void drawRGBBitmap_1 (int16_t x, int16_t y, uint16_t *bitmap,int16_t w, int16_t h) 
 {
   
   for (int16_t j = 0; j < h; j++, y++) {
@@ -862,7 +862,7 @@ void drawRGBBitmap_1 (int16_t x, int16_t y, uint8_t *bitmap,int16_t w, int16_t h
  
 }
 
-void draw_RGB_Bitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h) 
+void draw_RGB_Bitmap(int16_t x, int16_t y, const uint16_t bitmap[], int16_t w, int16_t h) 
 {
   
   for (int16_t j = 0; j < h; j++, y++) {
@@ -874,7 +874,7 @@ void draw_RGB_Bitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, in
 }
 
 
-void printImage(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t *data, uint32_t size)
+void printImage(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t *data, uint32_t size)
 {
 	uint32_t n = size;
 	SetCursorPosition (x, y, w+x-1, h+y-1); //y, y+1, x, x+1
@@ -919,7 +919,7 @@ void SSD1963_drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uin
     if (i == 5) 
       line = 0x0;
     else 
-      line = pgm_read_byte(font1+(c*5)+i); ///////////////////////////////////////////////////////
+      line = pgm_read_byte(font2+(c*5)+i); ///////////////////////////////////////////////////////
     for (int8_t j = 0; j<8; j++) {
       if (line & 0x1) {
         if (size == 1) // default size
@@ -1536,9 +1536,9 @@ void app_main(void)
 
      ////////////////////////////////////////////////////////////////////////////////////////
      ////////////////////////////////////////////////////////////////////////////////////////
-    // LCD_INIT ();
+    LCD_INIT ();
 
-    // SSD1963_Fill_Rect(0,0,800,480,SSD1963_WHITE);
+    SSD1963_Fill_Rect(0,0,800,480,SSD1963_WHITE);
 
     // setRotation (3) ;
     //  draw_Bitmap(224, 209, walton_text, 352, 66,SSD1963_BLUE);
@@ -1548,206 +1548,208 @@ void app_main(void)
       while (1)
     {
 
-     LCD_INIT ();
+    //  LCD_INIT ();
 
-     SSD1963_Fill_Rect(0,0,800,480,SSD1963_WHITE);
+    //  SSD1963_Fill_Rect(0,0,800,480,SSD1963_WHITE);
 
      printText ("-26  8", 10, 10, SSD1963_RED, SSD1963_WHITE, 6);
 
-
+     printImage(80, 112, 256, 256, myImage, sizeof(myImage));
 
      setRotation (3) ;
+
+     //drawRGBBitmap_1 (800,112,myImage,256,256);
 
     //  draw_Bitmap(224, 209, walton_text, 352, 66,SSD1963_BLUE);
     //  vTaskDelay(1000/portTICK_RATE_MS);
     //  SSD1963_Fill_Rect(0,0,800,480,SSD1963_WHITE);
 
-       printText ("FRIDGE", 145, 310, SSD1963_ORANGE, SSD1963_WHITE, 2);
-       printText ("FREEZER", 585, 310, SSD1963_RED, SSD1963_WHITE, 2);
+      //  printText ("FRIDGE", 145, 310, SSD1963_ORANGE, SSD1963_WHITE, 2);
+      //  printText ("FREEZER", 585, 310, SSD1963_RED, SSD1963_WHITE, 2);
 
-       draw_Bitmap(164, 245, temp, 27, 26,SSD1963_BLACK);
-       draw_Bitmap(610, 245, temp, 27, 26,SSD1963_BLACK);
+      //  draw_Bitmap(164, 245, temp, 27, 26,SSD1963_BLACK);
+      //  draw_Bitmap(610, 245, temp, 27, 26,SSD1963_BLACK);
 
-       drawRoundRect(345,130,53,53,5,SSD1963_BLACK);
-       drawRoundRect(346  ,131,51,51,5,SSD1963_BLACK);
-       fillRoundRect (347,132,49,49,5,SSD1963_ASSS);
-       draw_Bitmap(355, 140, eco, 35, 38,SSD1963_DARKGREEN);
-       printText ("NATURE", 403, 140, SSD1963_BLUE, SSD1963_WHITE, 2);
-       printText ("FRESH", 403, 160, SSD1963_BLUE, SSD1963_WHITE, 2);
+      //  drawRoundRect(345,130,53,53,5,SSD1963_BLACK);
+      //  drawRoundRect(346  ,131,51,51,5,SSD1963_BLACK);
+      //  fillRoundRect (347,132,49,49,5,SSD1963_ASSS);
+      //  draw_Bitmap(355, 140, eco, 35, 38,SSD1963_DARKGREEN);
+      //  printText ("NATURE", 403, 140, SSD1963_BLUE, SSD1963_WHITE, 2);
+      //  printText ("FRESH", 403, 160, SSD1963_BLUE, SSD1963_WHITE, 2);
 
-       drawRoundRect(345,190,53,53,5,SSD1963_BLACK);
-       drawRoundRect(346  ,191,51,51,5,SSD1963_BLACK);
-       fillRoundRect (347,192,49,49,5,SSD1963_ASSS);
-       draw_Bitmap(355, 200, wifi, 35, 35,SSD1963_DARKORANGE);
-       printText ("WiFi", 403, 210, SSD1963_BLUE, SSD1963_WHITE, 2);
+      //  drawRoundRect(345,190,53,53,5,SSD1963_BLACK);
+      //  drawRoundRect(346  ,191,51,51,5,SSD1963_BLACK);
+      //  fillRoundRect (347,192,49,49,5,SSD1963_ASSS);
+      //  draw_Bitmap(355, 200, wifi, 35, 35,SSD1963_DARKORANGE);
+      //  printText ("WiFi", 403, 210, SSD1963_BLUE, SSD1963_WHITE, 2);
        
-       drawRoundRect(345,250,53,53,5,SSD1963_BLACK);
-       drawRoundRect(346  ,251,51,51,5,SSD1963_BLACK);
-       fillRoundRect (347,252,49,49,5,SSD1963_ASSS);
-       draw_Bitmap(355, 260, lock, 35, 35,SSD1963_DARKORANGE);
-       printText ("LOCK", 403, 270, SSD1963_BLUE, SSD1963_WHITE, 2);
+      //  drawRoundRect(345,250,53,53,5,SSD1963_BLACK);
+      //  drawRoundRect(346  ,251,51,51,5,SSD1963_BLACK);
+      //  fillRoundRect (347,252,49,49,5,SSD1963_ASSS);
+      //  draw_Bitmap(355, 260, lock, 35, 35,SSD1963_DARKORANGE);
+      //  printText ("LOCK", 403, 270, SSD1963_BLUE, SSD1963_WHITE, 2);
 
-       drawRoundRect(345,310,53,53,5,SSD1963_BLACK);
-       drawRoundRect(346  ,311,51,51,5,SSD1963_BLACK);
-       fillRoundRect (347,312,49,49,5,SSD1963_ASSS);
-       draw_Bitmap(355, 320, door, 35, 35,SSD1963_RED);
-       printText ("DOOR", 403, 330, SSD1963_BLUE, SSD1963_WHITE, 2);
+      //  drawRoundRect(345,310,53,53,5,SSD1963_BLACK);
+      //  drawRoundRect(346  ,311,51,51,5,SSD1963_BLACK);
+      //  fillRoundRect (347,312,49,49,5,SSD1963_ASSS);
+      //  draw_Bitmap(355, 320, door, 35, 35,SSD1963_RED);
+      //  printText ("DOOR", 403, 330, SSD1963_BLUE, SSD1963_WHITE, 2);
 
-       drawRoundRect(53,363,64,64,5,SSD1963_BLACK);
-       drawRoundRect(54,364,62,62,5,SSD1963_BLACK);
-       fillRoundRect (55,365,60,60,5,SSD1963_ASSS);
-       //fillRoundRect (30,420,110,50,5,SSD1963_ASSS);
-       //printText ("CURRENT", 42, 430, SSD1963_BLACK, SSD1963_WHITE, 2);
-       printText ("FRIDGE", 51, 438, SSD1963_BLACK, SSD1963_WHITE, 2);
-       draw_Bitmap(63, 370, defrost_mode, 45, 45,SSD1963_BLUE);
+      //  drawRoundRect(53,363,64,64,5,SSD1963_BLACK);
+      //  drawRoundRect(54,364,62,62,5,SSD1963_BLACK);
+      //  fillRoundRect (55,365,60,60,5,SSD1963_ASSS);
+      //  //fillRoundRect (30,420,110,50,5,SSD1963_ASSS);
+      //  //printText ("CURRENT", 42, 430, SSD1963_BLACK, SSD1963_WHITE, 2);
+      //  printText ("FRIDGE", 51, 438, SSD1963_BLACK, SSD1963_WHITE, 2);
+      //  draw_Bitmap(63, 370, defrost_mode, 45, 45,SSD1963_BLUE);
 
-       drawRoundRect(345,130,53,53,5,SSD1963_BLACK);
-       drawRoundRect(346  ,131,51,51,5,SSD1963_BLACK);
-       fillRoundRect (200,365,60,60,5,SSD1963_ASSS);
-       //fillRoundRect (175,420,110,50,5,SSD1963_ASSS);
-       printText ("TURBO", 201, 438, SSD1963_BLACK, SSD1963_WHITE, 2);
-       draw_Bitmap(205, 370, turbo, 50, 37,SSD1963_BLUE);
+      //  drawRoundRect(345,130,53,53,5,SSD1963_BLACK);
+      //  drawRoundRect(346  ,131,51,51,5,SSD1963_BLACK);
+      //  fillRoundRect (200,365,60,60,5,SSD1963_ASSS);
+      //  //fillRoundRect (175,420,110,50,5,SSD1963_ASSS);
+      //  printText ("TURBO", 201, 438, SSD1963_BLACK, SSD1963_WHITE, 2);
+      //  draw_Bitmap(205, 370, turbo, 50, 37,SSD1963_BLUE);
 
-       drawRoundRect(345,130,53,53,5,SSD1963_BLACK);
-       drawRoundRect(346  ,131,51,51,5,SSD1963_BLACK);
-       fillRoundRect (540,365,60,60,5,SSD1963_ASSS);
-       //fillRoundRect (515,420,110,50,5,SSD1963_ASSS);
-       printText ("E-SAVE", 536, 438, SSD1963_BLACK, SSD1963_WHITE, 2);
-       draw_Bitmap(546, 370, esave, 46, 46,SSD1963_BLUE);
+      //  drawRoundRect(345,130,53,53,5,SSD1963_BLACK);
+      //  drawRoundRect(346  ,131,51,51,5,SSD1963_BLACK);
+      //  fillRoundRect (540,365,60,60,5,SSD1963_ASSS);
+      //  //fillRoundRect (515,420,110,50,5,SSD1963_ASSS);
+      //  printText ("E-SAVE", 536, 438, SSD1963_BLACK, SSD1963_WHITE, 2);
+      //  draw_Bitmap(546, 370, esave, 46, 46,SSD1963_BLUE);
 
-       drawRoundRect(345,130,53,53,5,SSD1963_BLACK);
-       drawRoundRect(346  ,131,51,51,5,SSD1963_BLACK);
-       fillRoundRect (685,365,60,60,5,SSD1963_ASSS);
-       //fillRoundRect (660,420,110,50,5,SSD1963_ASSS);
-       printText ("HOLIDAY", 675, 438, SSD1963_BLACK, SSD1963_WHITE, 2);
-       draw_Bitmap(693, 371, holiday, 50, 35,SSD1963_BLUE);
+      //  drawRoundRect(345,130,53,53,5,SSD1963_BLACK);
+      //  drawRoundRect(346  ,131,51,51,5,SSD1963_BLACK);
+      //  fillRoundRect (685,365,60,60,5,SSD1963_ASSS);
+      //  //fillRoundRect (660,420,110,50,5,SSD1963_ASSS);
+      //  printText ("HOLIDAY", 675, 438, SSD1963_BLACK, SSD1963_WHITE, 2);
+      //  draw_Bitmap(693, 371, holiday, 50, 35,SSD1963_BLUE);
 
       
      
 
 
-      //  SSD1963_drawLine(400,130, 400, 380, SSD1963_BLACK);
-      //  SSD1963_drawLine(30, 130, 770, 130, SSD1963_BLACK);
+      // //  SSD1963_drawLine(400,130, 400, 380, SSD1963_BLACK);
+      // //  SSD1963_drawLine(30, 130, 770, 130, SSD1963_BLACK);
 
-      //  LCD_command_WRITE(0xBE);   //set PWM for B/L
-      //  LCD_data_WRITE(0x06);   //0x06
-      //  LCD_data_WRITE(0x96);   //0x96
-      //  LCD_data_WRITE(0x01);
-      //  LCD_data_WRITE(0xf0);   //0xF0
-      //  LCD_data_WRITE(0x00);
-      //  LCD_data_WRITE(0x00);
-      //  LCD_command_WRITE(0xd0); 
-      //  LCD_data_WRITE(0x0d); 
+      // //  LCD_command_WRITE(0xBE);   //set PWM for B/L
+      // //  LCD_data_WRITE(0x06);   //0x06
+      // //  LCD_data_WRITE(0x96);   //0x96
+      // //  LCD_data_WRITE(0x01);
+      // //  LCD_data_WRITE(0xf0);   //0xF0
+      // //  LCD_data_WRITE(0x00);
+      // //  LCD_data_WRITE(0x00);
+      // //  LCD_command_WRITE(0xd0); 
+      // //  LCD_data_WRITE(0x0d); 
 
-      //  vTaskDelay(2000/portTICK_RATE_MS);
+      // //  vTaskDelay(2000/portTICK_RATE_MS);
 
-      //  LCD_command_WRITE(0xE5);
-      //  vTaskDelay(2000/portTICK_RATE_MS);
+      // //  LCD_command_WRITE(0xE5);
+      // //  vTaskDelay(2000/portTICK_RATE_MS);
 
-          //for(float j=0; j<=16;j++)
-          for(float j=0; j<1;j++)
-          {
-          char buf[10];
-          //float fridge = 1.0+j;
-          float fridge = 17;
+      //     //for(float j=0; j<=16;j++)
+      //     for(float j=0; j<1;j++)
+      //     {
+      //     char buf[10];
+      //     //float fridge = 1.0+j;
+      //     float fridge = 17;
       
-          //float freezer = -15+j;
-          float freezer = 1.00;
+      //     //float freezer = -15+j;
+      //     float freezer = 1.00;
 
-             ringMeter(fridge, 1, 17, 80, 130, 100, BLUE2RED);
-             ringMeter(freezer, -15, 1, 520, 130, 100, BLUE2RED);
+      //        ringMeter(fridge, 1, 17, 80, 130, 100, BLUE2RED);
+      //        ringMeter(freezer, -15, 1, 520, 130, 100, BLUE2RED);
 
-          snprintf (buf, sizeof(buf), "%0.1f", fridge);
-          printText (buf, 140, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     snprintf (buf, sizeof(buf), "%0.1f", fridge);
+      //     printText (buf, 140, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
 
 
           
-          if (freezer==0.00)
-          {
-          printText ("      ", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
-          printText ("0.00", 585, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
-          }
-          else if (freezer == 1.00)
-          {
-          printText ("      ", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
-          printText ("1.00", 585, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     if (freezer==0.00)
+      //     {
+      //     printText ("      ", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     printText ("0.00", 585, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     }
+      //     else if (freezer == 1.00)
+      //     {
+      //     printText ("      ", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     printText ("1.00", 585, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
 
-          for(int i=0;i<5;i++)
-          {
-          draw_Bitmap(700, 300, alarm_, 24, 22,SSD1963_RED);
-          vTaskDelay(1000/portTICK_RATE_MS);
-          fillRoundRect (695,295,30,30,5,SSD1963_WHITE);
-          vTaskDelay(1000/portTICK_RATE_MS);
-          }
+      //     for(int i=0;i<5;i++)
+      //     {
+      //     draw_Bitmap(700, 300, alarm_, 24, 22,SSD1963_RED);
+      //     vTaskDelay(1000/portTICK_RATE_MS);
+      //     fillRoundRect (695,295,30,30,5,SSD1963_WHITE);
+      //     vTaskDelay(1000/portTICK_RATE_MS);
+      //     }
 
-          }
+      //     }
 
-             else if (freezer == -1.00)
-          {
-          printText ("-1.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
-          }
-             else if (freezer == -2.00)
-          {
-          printText ("-2.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
-          }
-             else if (freezer == -3.00)
-          {
-          printText ("-3.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
-          }
-             else if (freezer == -4.00)
-          {
-          printText ("-4.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
-          }
-             else if (freezer == -5.00)
-          {
-          printText ("-5.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
-          }
-             else if (freezer == -6.00)
-          {
-          printText ("-6.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
-          }
-             else if (freezer == -7.00)
-          {
-          printText ("-7.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
-          }
-             else if (freezer == -8.00)
-          {
-          printText ("-8.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
-          }
-             else if (freezer == -9.00)
-          {
-          printText ("-9.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
-          }
-             else if (freezer == -10.00)
-          {
-          printText ("-10.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
-          }
-             else if (freezer == -11.00)
-          {
-          printText ("-11.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
-          }
-             else if (freezer == -12.00)
-          {
-          printText ("-12.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
-          }
-             else if (freezer == -13.00)
-          {
-          printText ("-13.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
-          }
-             else if (freezer == -14.00)
-          {
-          printText ("-14.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
-          }
-             else if (freezer == -15.00)
-          {
-          printText ("-15.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
-          }
+      //        else if (freezer == -1.00)
+      //     {
+      //     printText ("-1.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     }
+      //        else if (freezer == -2.00)
+      //     {
+      //     printText ("-2.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     }
+      //        else if (freezer == -3.00)
+      //     {
+      //     printText ("-3.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     }
+      //        else if (freezer == -4.00)
+      //     {
+      //     printText ("-4.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     }
+      //        else if (freezer == -5.00)
+      //     {
+      //     printText ("-5.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     }
+      //        else if (freezer == -6.00)
+      //     {
+      //     printText ("-6.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     }
+      //        else if (freezer == -7.00)
+      //     {
+      //     printText ("-7.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     }
+      //        else if (freezer == -8.00)
+      //     {
+      //     printText ("-8.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     }
+      //        else if (freezer == -9.00)
+      //     {
+      //     printText ("-9.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     }
+      //        else if (freezer == -10.00)
+      //     {
+      //     printText ("-10.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     }
+      //        else if (freezer == -11.00)
+      //     {
+      //     printText ("-11.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     }
+      //        else if (freezer == -12.00)
+      //     {
+      //     printText ("-12.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     }
+      //        else if (freezer == -13.00)
+      //     {
+      //     printText ("-13.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     }
+      //        else if (freezer == -14.00)
+      //     {
+      //     printText ("-14.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     }
+      //        else if (freezer == -15.00)
+      //     {
+      //     printText ("-15.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+      //     }
           
-          else {}
+      //     else {}
           
-          }
+      //     }
 
-          vTaskDelay(600000/portTICK_RATE_MS);
+      //     vTaskDelay(600000/portTICK_RATE_MS);
 
        }
   
