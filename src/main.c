@@ -6,10 +6,14 @@
 #include "stdlib.h"
 #include "stdint.h"
 #include "string.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "driver/gpio.h"
+#include "esp_log.h"
 #include "esp_netif.h"
+#include "gfxfont.h"
 #include "Image_file.c"
-
+#include <Fonts/FreeSansBold24pt7b.h>
 
 #define pgm_read_byte(addr) (*(const unsigned char *)(addr))
 #define pgm_read_word(addr) (*(const unsigned short *)(addr))
@@ -17,17 +21,72 @@
 #define swap(a, b) { int16_t t = a; a = b; b = t; }
 #define min(a,b) (((a)<(b))?(a):(b))
 
+  // int16_t WIDTH,      ///< This is the 'raw' display width - never changes
+  //         HEIGHT;         ///< This is the 'raw' display height - never changes
+  // int16_t _width,     ///< Display width as modified by current rotation
+  //         _height,        ///< Display height as modified by current rotation
+  //         cursor_x,       ///< x location to start print()ing text
+  //         cursor_y;       ///< y location to start print()ing text
+  // uint16_t textcolor, ///< 16-bit background color for print()
+  //          textbgcolor;    ///< 16-bit text color for print()
+  // uint8_t textsize_x, ///< Desired magnification in X-axis of text to print()
+  //         textsize_y,     ///< Desired magnification in Y-axis of text to print()
+  //         rotation;       ///< Display rotation (0 thru 3)
+  // bool wrap,       ///< If set, 'wrap' text at right edge of display
+  //     _cp437;         ///< If set, use correct CP437 charset (default is off)
+  // GFXfont *gfxFont;   ///< Pointer to special font
+
+
+//   inline GFXglyph *pgm_read_glyph_ptr(const GFXfont *gfxFont, uint8_t c) {
+// #ifdef __AVR__
+//   return &(((GFXglyph *)pgm_read_pointer(&gfxFont->glyph))[c]);
+// #else
+//   // expression in __AVR__ section may generate "dereferencing type-punned
+//   // pointer will break strict-aliasing rules" warning In fact, on other
+//   // platforms (such as STM32) there is no need to do this pointer magic as
+//   // program memory may be read in a usual way So expression may be simplified
+//   return gfxFont->glyph + c;
+// #endif //__AVR__
+// }
+
+// inline uint8_t *pgm_read_bitmap_ptr(const GFXfont *gfxFont) {
+// #ifdef __AVR__
+//   return (uint8_t *)pgm_read_pointer(&gfxFont->bitmap);
+// #else
+//   // expression in __AVR__ section generates "dereferencing type-punned pointer
+//   // will break strict-aliasing rules" warning In fact, on other platforms (such
+//   // as STM32) there is no need to do this pointer magic as program memory may
+//   // be read in a usual way So expression may be simplified
+//   return gfxFont->bitmap;
+// #endif //__AVR__
+// }
+
 extern uint8_t temp [];
 extern uint8_t font1 [];
+extern uint8_t font2 [];
 
 extern uint8_t eco_mode[];
 extern uint8_t fridge_mode[];
 extern uint8_t super_mode[];
 extern uint8_t defrost_mode[];
 
-extern uint8_t walton_logo [];
-extern uint8_t walton_logo_2 [];
-extern uint16_t walton_x [];
+extern uint8_t high_temp [];
+extern uint8_t wifi [];
+extern uint8_t lock [];
+extern uint8_t alarm_ [];
+extern uint8_t turbo [];
+extern uint8_t holiday [];
+extern uint8_t door [];
+extern uint8_t defrost [];
+extern uint8_t ambient [];
+extern uint8_t humidity [];
+extern uint8_t humidity_2 [];
+extern uint8_t temperature [];
+extern uint8_t igt[];
+extern uint8_t eco[];
+extern uint8_t esave[];
+extern uint8_t super_2[];
+
 extern uint8_t walton_text [];
 
 
@@ -35,7 +94,7 @@ extern uint8_t walton_text [];
 /////////////////////LOAD_CELL Parameter///////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
-// this code is in git
+
 
 
 
@@ -67,6 +126,11 @@ extern uint8_t walton_text [];
 #define SSD1963_GREENYELLOW 0xAFE5      /* 173, 255,  47 */
 #define SSD1963_PINK        0xF81F
 #define SSD1963_DARKORANGE  0xFB60
+#define SSD1963_BLUE2			  0x051D     
+#define SSD1963_GREEN2		  0xB723
+#define SSD1963_GREEN3		  0x8000     
+#define SSD1963_BROWN 			0XBC40 
+#define SSD1963_ASSS        0xC618
 
 
 #define RED2RED 0
@@ -98,30 +162,30 @@ extern uint8_t walton_text [];
 static bool _cp437    = false;
 static uint8_t rotationNum=1;
 ///////////////////////////////////////////////////////////////////////
-#define LCD_RST 4
-#define LCD_CS  2
-#define LCD_RS  3    
+#define LCD_RST 3
+#define LCD_CS  1
+#define LCD_RS  4   
 #define LCD_WR  40
-#define LCD_RD  1
+#define LCD_RD  2
 ///////////////////////////////////////////////////////////////////////
 /////////////////////////Parallel Interface////////////////////////////
 ///////////////////////////////////////////////////////////////////////
-#define LCD_D0 5
-#define LCD_D1 6
-#define LCD_D2 7
-#define LCD_D3 8
-#define LCD_D4 9
-#define LCD_D5 10
-#define LCD_D6 11
-#define LCD_D7 12
-#define LCD_D8  13
-#define LCD_D9  14
-#define LCD_D10 15
-#define LCD_D11 16
-#define LCD_D12 17
-#define LCD_D13 45
-#define LCD_D14 42
-#define LCD_D15 41
+#define LCD_D0 6
+#define LCD_D1 5
+#define LCD_D2 8
+#define LCD_D3 7
+#define LCD_D4 10
+#define LCD_D5 9
+#define LCD_D6 12
+#define LCD_D7 11
+#define LCD_D8  14
+#define LCD_D9  13
+#define LCD_D10 16
+#define LCD_D11 15
+#define LCD_D12 45
+#define LCD_D13 17
+#define LCD_D14 41
+#define LCD_D15 42
 /////////////////////////////////////////////////////////////////////
 ////////////////////////Load_cell////////////////////////////////////
 /////////////////////////////////////////////////////////////////////
@@ -149,64 +213,12 @@ for (uint16_t j=0;j<16;j++)
 
 }
 //////////////////////////////////////////////////////////////////////
-// void LCD_write (uint16_t d)
-// {
-
-
-// gpio_set_level (LCD_WR,0);
-
-//     uint16_t bits [16];
-//     Byte_TO_bits (bits,d);
-
-//      if (bits[0])
-//      {gpio_set_level (LCD_D0, 1);} else {gpio_set_level (LCD_D0, 0);}
-//      if (bits[1])
-//      {gpio_set_level (LCD_D1, 1);} else {gpio_set_level (LCD_D1, 0);}
-//      if (bits[2])
-//      {gpio_set_level (LCD_D2, 1);} else {gpio_set_level (LCD_D2, 0);}
-//      if (bits[3])
-//      {gpio_set_level (LCD_D3, 1);} else {gpio_set_level (LCD_D3, 0);}
-//      if (bits[4])
-//      {gpio_set_level (LCD_D4, 1);} else {gpio_set_level (LCD_D4, 0);}
-//      if (bits[5])
-//      {gpio_set_level (LCD_D5, 1);} else {gpio_set_level (LCD_D5, 0);}
-//      if (bits[6])
-//      {gpio_set_level (LCD_D6, 1);} else {gpio_set_level (LCD_D6, 0);}
-//      if (bits[7])
-//      {gpio_set_level (LCD_D7, 1);} else {gpio_set_level (LCD_D7, 0);}
-//      if (bits[8])
-//      {gpio_set_level (LCD_D8, 1);} else {gpio_set_level (LCD_D8, 0);}
-//      if (bits[9])
-//      {gpio_set_level (LCD_D9, 1);} else {gpio_set_level (LCD_D9, 0);}
-//      if (bits[10])
-//      {gpio_set_level (LCD_D10, 1);} else {gpio_set_level (LCD_D10, 0);}
-//      if (bits[11])
-//      {gpio_set_level (LCD_D11, 1);} else {gpio_set_level (LCD_D11, 0);}
-//      if (bits[12])
-//      {gpio_set_level (LCD_D12, 1);} else {gpio_set_level (LCD_D12, 0);}
-//      if (bits[13])
-//      {gpio_set_level (LCD_D13, 1);} else {gpio_set_level (LCD_D13, 0);}
-//      if (bits[14])
-//      {gpio_set_level (LCD_D14, 1);} else {gpio_set_level (LCD_D14, 0);}
-//      if (bits[15])
-//      {gpio_set_level (LCD_D15, 1);} else {gpio_set_level (LCD_D15, 0);}
-
-// gpio_set_level (LCD_WR,1);   
-
-// }
-
 void LCD_write (uint16_t pixel)
 {
-//gpio_set_level(LCD_CS, 0); // Assert Chip Select for the TFT
 
-// Command part is written first, omitted here for brevity
-
-// Send one 16-bit pixel data:
-
-//gpio_set_level(LCD_RS, 1); // This is pixel data, not command/register (those only use D0..D7)
 
 gpio_set_level(LCD_WR, 0); // Writing to TFT
-// Start setting up the data pins,
+
 gpio_set_level(LCD_D0, pixel & 1); pixel >>= 1;
 gpio_set_level(LCD_D1, pixel & 1); pixel >>= 1;
 gpio_set_level(LCD_D2, pixel & 1); pixel >>= 1;
@@ -223,8 +235,7 @@ gpio_set_level(LCD_D12, pixel & 1); pixel >>= 1;
 gpio_set_level(LCD_D13, pixel & 1); pixel >>= 1;
 gpio_set_level(LCD_D14, pixel & 1); pixel >>= 1;
 gpio_set_level(LCD_D15, pixel & 1);
-// and at this point, make sure at least 15ns passed
-// since the previous comment (including data pin setting)
+
 gpio_set_level(LCD_WR, 1); // Tell TFT to latch the parallel data.
 
 }
@@ -266,12 +277,6 @@ void LCD_INIT (void)
    gpio_set_level (LCD_CS,0);
 
    ///////////////////////////////////////////////////
-
-
-
-
-
-
   LCD_command_WRITE(0xE2);   //PLL multiplier, set PLL clock to 120M
   LCD_data_WRITE(0x23);      //N=0x36 for 6.5M, 0x23 for 10M crystal
   LCD_data_WRITE(0x02);
@@ -326,8 +331,6 @@ void LCD_INIT (void)
   LCD_data_WRITE(0x01);      //GPIO0 normal
 
   LCD_command_WRITE(0x36);   //rotation
-  //LCD_data_WRITE(0x21 | MADCTL_BGR);
-  //LCD_data_WRITE(0x22);		   // -- Set to 0x21 to rotate 180 degrees
 	LCD_data_WRITE(MADCTL_MY | 0x21 | 0x22 | MADCTL_RGB); 
 
 
@@ -437,7 +440,6 @@ void Draw_Pixel (int16_t x, int16_t y, uint16_t color)
   LCD_data_WRITE(color);
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////Draw_Line///////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -447,7 +449,6 @@ for (int i=10; i<310; i++)
      {
        for (int j=0; j<5; j++)
        {
-        //Draw_Pixel(j+235, i, SSD1963_BLUE);
         Draw_Pixel (j+235, i, SSD1963_RED);
        }
        
@@ -850,7 +851,7 @@ void draw_Bitmap (int16_t x, int16_t y,const uint8_t *bitmap, int16_t w, int16_t
   }
 }
 
-void drawRGBBitmap_1 (int16_t x, int16_t y, uint16_t *bitmap,int16_t w, int16_t h) 
+void drawRGBBitmap_1 (int16_t x, int16_t y, uint8_t *bitmap,int16_t w, int16_t h) 
 {
   
   for (int16_t j = 0; j < h; j++, y++) {
@@ -861,7 +862,7 @@ void drawRGBBitmap_1 (int16_t x, int16_t y, uint16_t *bitmap,int16_t w, int16_t 
  
 }
 
-void draw_RGB_Bitmap(int16_t x, int16_t y, const uint16_t bitmap[], int16_t w, int16_t h) 
+void draw_RGB_Bitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h) 
 {
   
   for (int16_t j = 0; j < h; j++, y++) {
@@ -872,14 +873,14 @@ void draw_RGB_Bitmap(int16_t x, int16_t y, const uint16_t bitmap[], int16_t w, i
   
 }
 
+
 void printImage(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t *data, uint32_t size)
 {
 	uint32_t n = size;
-	SetCursorPosition(x, y, w+x-1, h+y-1);
+	SetCursorPosition (x, y, w+x-1, h+y-1); //y, y+1, x, x+1
 	for(uint32_t i=0; i<n ; i++)
 	{
 		LCD_data_WRITE(data[i]);
-    vTaskDelay(4/portTICK_RATE_MS);
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -938,6 +939,157 @@ void SSD1963_drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uin
   }
 }
 
+// void drawChar(int16_t x, int16_t y, unsigned char c,uint16_t color, uint16_t bg, uint8_t size) 
+                            
+// {
+
+//   if (!gfxFont) { // 'Classic' built-in font
+
+//     if ((x >= SSD1963_WIDTH) ||              // Clip right
+//         (y >= SSD1963_HEIGHT) ||             // Clip bottom
+//         ((x + 6 * size - 1) < 0) || // Clip left
+//         ((y + 8 * size - 1) < 0))   // Clip top
+//       return;
+
+//     if (!_cp437 && (c >= 176))
+//       c++; // Handle 'classic' charset behavior
+
+//     for (int8_t i = 0; i < 5; i++) { // Char bitmap = 5 columns
+//       uint8_t line = pgm_read_byte(&font1[c * 5 + i]);
+//       for (int8_t j = 0; j < 8; j++, line >>= 1) {
+//         if (line & 1) {
+//           if (size == 1 && size == 1)
+//             Draw_Pixel(x + i, y + j, color);
+//           else
+//             SSD1963_Fill_Rect (x+(i*size), y+(j*size), size + x+(i*size), size+1 + y+(j*size), color);
+//         } else if (bg != color) {
+//           if (size == 1 && size == 1)
+//             Draw_Pixel(x + i, y + j, bg);
+//           else
+//             SSD1963_Fill_Rect(x+i*size, y+j*size, size + x+i*size, size+1 + y+j*size, bg);
+//         }
+//       }
+//     }
+//     if (bg != color) { // If opaque, draw vertical line for last column
+//       if (size == 1 && size == 1)
+//         SSD1963_drawFastVLine(x + 5, y, 8, bg);
+//       else
+//         SSD1963_Fill_Rect(x + 5 * size, y, size, 8 * size, bg);
+//     }
+    
+
+//   } else { // Custom font
+//     //printf("draw(%d) Custom font in x:%d y:%d\n",c,x,y);
+//     // Character is assumed previously filtered by write() to eliminate
+//     // newlines, returns, non-printable characters, etc.  Calling
+//     // drawChar() directly with 'bad' characters of font may cause mayhem!
+
+//     c -= (uint8_t)pgm_read_byte(&gfxFont->first);
+//     GFXglyph *glyph = pgm_read_glyph_ptr(gfxFont, c);
+//     uint8_t *bitmap = pgm_read_bitmap_ptr(gfxFont);
+
+//     uint16_t bo = pgm_read_word(&glyph->bitmapOffset);
+//     uint8_t w = pgm_read_byte(&glyph->width), h = pgm_read_byte(&glyph->height);
+//     int8_t xo = pgm_read_byte(&glyph->xOffset),
+//            yo = pgm_read_byte(&glyph->yOffset);
+//     uint8_t xx, yy, bits = 0, bit = 0;
+//     int16_t xo16 = 0, yo16 = 0;
+
+//     if (size > 1 || size > 1) {
+//       xo16 = xo;
+//       yo16 = yo;
+//     }
+
+//     // Todo: Add character clipping here
+
+//     // NOTE: THERE IS NO 'BACKGROUND' COLOR OPTION ON CUSTOM FONTS.
+//     // THIS IS ON PURPOSE AND BY DESIGN.  The background color feature
+//     // has typically been used with the 'classic' font to overwrite old
+//     // screen contents with new data.  This ONLY works because the
+//     // characters are a uniform size; it's not a sensible thing to do with
+//     // proportionally-spaced fonts with glyphs of varying sizes (and that
+//     // may overlap).  To replace previously-drawn text when using a custom
+//     // font, use the getTextBounds() function to determine the smallest
+//     // rectangle encompassing a string, erase the area with fillRect(),
+//     // then draw new text.  This WILL infortunately 'blink' the text, but
+//     // is unavoidable.  Drawing 'background' pixels will NOT fix this,
+//     // only creates a new set of problems.  Have an idea to work around
+//     // this (a canvas object type for MCUs that can afford the RAM and
+//     // displays supporting setAddrWindow() and pushColors()), but haven't
+//     // implemented this yet.
+
+//     for (yy = 0; yy < h; yy++) {
+//       for (xx = 0; xx < w; xx++) {
+//         if (!(bit++ & 7)) {
+//           bits = pgm_read_byte(&bitmap[bo++]);
+//         }
+//         if (bits & 0x80) {
+//           if (size == 1 && size == 1) {
+//             Draw_Pixel(x + xo + xx, y + yo + yy, color);
+//           } else {
+//             SSD1963_Fill_Rect(x + (xo16 + xx) * size, y + (yo16 + yy) * size,
+//                           size, size, color);
+//           }
+//         }
+//         bits <<= 1;
+//       }
+//     }
+ 
+
+//   } // End classic vs custom font
+// }
+
+// void setTextSize(uint8_t s_x, uint8_t s_y) 
+// {
+//   textsize_x = (s_x > 0) ? s_x : 1;
+//   textsize_y = (s_y > 0) ? s_y : 1;
+// }
+
+// void set_Rotation (uint8_t x)
+//  {
+//   rotation = (x & 3);
+//   switch (rotation) {
+//   case 0:
+//   case 2:
+//     _width = WIDTH;
+//     _height = HEIGHT;
+//     break;
+//   case 1:
+//   case 3:
+//     _width = HEIGHT;
+//     _height = WIDTH;
+//     break;
+//   }
+// }
+
+// void setFont(const GFXfont *f) 
+// {
+//   if (f) {          // Font struct pointer passed in?
+//     if (!gfxFont) { // And no current font struct?
+//       // Switching from classic to new font behavior.
+//       // Move cursor pos down 6 pixels so it's on baseline.
+//       cursor_y += 6;
+//     }
+//   } else if (gfxFont) { // NULL passed.  Current font struct defined?
+//     // Switching from new to classic font behavior.
+//     // Move cursor pos up 6 pixels so it's at top-left of char.
+//     cursor_y -= 6;
+//   }
+//   gfxFont = (GFXfont *)f;
+// }
+
+//  void setTextColor(uint16_t c, uint16_t bg) 
+//  {
+//     textcolor = c;
+//     textbgcolor = bg;
+//   }
+
+
+//   void setCursor(int16_t x, int16_t y) 
+//   {
+//     cursor_x = x;
+//     cursor_y = y;
+//   }
 ////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////
 void printText(char text[], int16_t x, int16_t y, uint16_t color, uint16_t bg, uint8_t size)
@@ -946,9 +1098,62 @@ void printText(char text[], int16_t x, int16_t y, uint16_t color, uint16_t bg, u
 	offset = size*6;
 	for(uint16_t i=0; i<40 && text[i]!=NULL; i++)
 	{
-		SSD1963_drawChar(x+(offset*i), y, text[i],color,bg,size);
+    SSD1963_drawChar(x+(offset*i), y, text[i],color,bg,size);
 	}
 }
+
+
+
+// size_t Custom_print_text (uint8_t c) 
+
+// {
+//   if (!gfxFont) { // 'Classic' built-in font
+//     printf("write(%d) Custom font\n",c);
+//     if (c == '\n') {              // Newline?
+//       cursor_x = 0;               // Reset x to zero,
+//       cursor_y += textsize_y * 8; // advance y one line
+//     } else if (c != '\r') {       // Ignore carriage returns
+//       if (wrap && ((cursor_x + textsize_x * 6) > _width)) { // Off right?
+//         cursor_x = 0;                                       // Reset x to zero,
+//         cursor_y += textsize_y * 8; // advance y one line
+//       }
+//       drawChar(cursor_x, cursor_y, c, textcolor, textbgcolor, textsize_x,
+//                textsize_y);
+//       cursor_x += textsize_x * 6; // Advance x one char
+//     }
+
+//   } else { // Custom font
+//     //printf("write(%d) Custom font\n",c);
+//     if (c == '\n') {
+//       cursor_x = 0;
+//       cursor_y +=
+//           (int16_t)textsize_y * (uint8_t)pgm_read_byte(&gfxFont->yAdvance);
+//     } else if (c != '\r') {
+//       uint8_t first = pgm_read_byte(&gfxFont->first);
+
+//       if ((c >= first) && (c <= (uint8_t)pgm_read_byte(&gfxFont->last))) {
+//         //printf("write() >=%d <=%d CHAR is in range\n",first, (uint8_t)pgm_read_byte(&gfxFont->last));
+
+//         GFXglyph *glyph = pgm_read_glyph_ptr(gfxFont, c - first);
+//         uint8_t w = pgm_read_byte(&glyph->width),
+//                 h = pgm_read_byte(&glyph->height);
+//         if ((w > 0) && (h > 0)) { // Is there an associated bitmap?
+//           int16_t xo = (int8_t)pgm_read_byte(&glyph->xOffset); // sic
+//           if (wrap && ((cursor_x + textsize_x * (xo + w)) > _width)) {
+//             cursor_x = 0;
+//             cursor_y += (int16_t)textsize_y *
+//                         (uint8_t)pgm_read_byte(&gfxFont->yAdvance);
+//           }
+//           drawChar(cursor_x, cursor_y, c, textcolor, textbgcolor, textsize_x,
+//                    textsize_y);
+//         }
+//         cursor_x +=
+//             (uint8_t)pgm_read_byte(&glyph->xAdvance) * (int16_t)textsize_x;
+//       }
+//     }
+//   }
+//   return 1;
+// }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////Fill_screen////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1331,30 +1536,98 @@ void app_main(void)
 
      ////////////////////////////////////////////////////////////////////////////////////////
      ////////////////////////////////////////////////////////////////////////////////////////
-     LCD_INIT ();
+    // LCD_INIT ();
 
-     //setRotation (1) ;
-     SSD1963_Fill_Rect(0,0,800,480,SSD1963_WHITE);
+    // SSD1963_Fill_Rect(0,0,800,480,SSD1963_WHITE);
 
-     setRotation (3) ;
+    // setRotation (3) ;
     //  draw_Bitmap(224, 209, walton_text, 352, 66,SSD1963_BLUE);
     //  vTaskDelay(1000/portTICK_RATE_MS);
-    
     //  SSD1963_Fill_Rect(0,0,800,480,SSD1963_WHITE);
-    //  fillRoundRect(5,4,470,41,6, SSD1963_DARKORANGE);
-     //draw_Circular_bar(x_bar_t, y_bar_t);
-
-     
 
       while (1)
     {
 
-      //  LCD_INIT ();
+     LCD_INIT ();
+
+     SSD1963_Fill_Rect(0,0,800,480,SSD1963_WHITE);
+
+     printText ("-26  8", 10, 10, SSD1963_RED, SSD1963_WHITE, 6);
+
+
+
+     setRotation (3) ;
+
+    //  draw_Bitmap(224, 209, walton_text, 352, 66,SSD1963_BLUE);
+    //  vTaskDelay(1000/portTICK_RATE_MS);
+    //  SSD1963_Fill_Rect(0,0,800,480,SSD1963_WHITE);
+
+       printText ("FRIDGE", 145, 310, SSD1963_ORANGE, SSD1963_WHITE, 2);
+       printText ("FREEZER", 585, 310, SSD1963_RED, SSD1963_WHITE, 2);
+
+       draw_Bitmap(164, 245, temp, 27, 26,SSD1963_BLACK);
+       draw_Bitmap(610, 245, temp, 27, 26,SSD1963_BLACK);
+
+       drawRoundRect(345,130,53,53,5,SSD1963_BLACK);
+       drawRoundRect(346  ,131,51,51,5,SSD1963_BLACK);
+       fillRoundRect (347,132,49,49,5,SSD1963_ASSS);
+       draw_Bitmap(355, 140, eco, 35, 38,SSD1963_DARKGREEN);
+       printText ("NATURE", 403, 140, SSD1963_BLUE, SSD1963_WHITE, 2);
+       printText ("FRESH", 403, 160, SSD1963_BLUE, SSD1963_WHITE, 2);
+
+       drawRoundRect(345,190,53,53,5,SSD1963_BLACK);
+       drawRoundRect(346  ,191,51,51,5,SSD1963_BLACK);
+       fillRoundRect (347,192,49,49,5,SSD1963_ASSS);
+       draw_Bitmap(355, 200, wifi, 35, 35,SSD1963_DARKORANGE);
+       printText ("WiFi", 403, 210, SSD1963_BLUE, SSD1963_WHITE, 2);
        
- 
-      //  setRotation (4) ;
-      //  SSD1963_Fill (SSD1963_WHITE);
-      //  vTaskDelay(2000/portTICK_RATE_MS);
+       drawRoundRect(345,250,53,53,5,SSD1963_BLACK);
+       drawRoundRect(346  ,251,51,51,5,SSD1963_BLACK);
+       fillRoundRect (347,252,49,49,5,SSD1963_ASSS);
+       draw_Bitmap(355, 260, lock, 35, 35,SSD1963_DARKORANGE);
+       printText ("LOCK", 403, 270, SSD1963_BLUE, SSD1963_WHITE, 2);
+
+       drawRoundRect(345,310,53,53,5,SSD1963_BLACK);
+       drawRoundRect(346  ,311,51,51,5,SSD1963_BLACK);
+       fillRoundRect (347,312,49,49,5,SSD1963_ASSS);
+       draw_Bitmap(355, 320, door, 35, 35,SSD1963_RED);
+       printText ("DOOR", 403, 330, SSD1963_BLUE, SSD1963_WHITE, 2);
+
+       drawRoundRect(53,363,64,64,5,SSD1963_BLACK);
+       drawRoundRect(54,364,62,62,5,SSD1963_BLACK);
+       fillRoundRect (55,365,60,60,5,SSD1963_ASSS);
+       //fillRoundRect (30,420,110,50,5,SSD1963_ASSS);
+       //printText ("CURRENT", 42, 430, SSD1963_BLACK, SSD1963_WHITE, 2);
+       printText ("FRIDGE", 51, 438, SSD1963_BLACK, SSD1963_WHITE, 2);
+       draw_Bitmap(63, 370, defrost_mode, 45, 45,SSD1963_BLUE);
+
+       drawRoundRect(345,130,53,53,5,SSD1963_BLACK);
+       drawRoundRect(346  ,131,51,51,5,SSD1963_BLACK);
+       fillRoundRect (200,365,60,60,5,SSD1963_ASSS);
+       //fillRoundRect (175,420,110,50,5,SSD1963_ASSS);
+       printText ("TURBO", 201, 438, SSD1963_BLACK, SSD1963_WHITE, 2);
+       draw_Bitmap(205, 370, turbo, 50, 37,SSD1963_BLUE);
+
+       drawRoundRect(345,130,53,53,5,SSD1963_BLACK);
+       drawRoundRect(346  ,131,51,51,5,SSD1963_BLACK);
+       fillRoundRect (540,365,60,60,5,SSD1963_ASSS);
+       //fillRoundRect (515,420,110,50,5,SSD1963_ASSS);
+       printText ("E-SAVE", 536, 438, SSD1963_BLACK, SSD1963_WHITE, 2);
+       draw_Bitmap(546, 370, esave, 46, 46,SSD1963_BLUE);
+
+       drawRoundRect(345,130,53,53,5,SSD1963_BLACK);
+       drawRoundRect(346  ,131,51,51,5,SSD1963_BLACK);
+       fillRoundRect (685,365,60,60,5,SSD1963_ASSS);
+       //fillRoundRect (660,420,110,50,5,SSD1963_ASSS);
+       printText ("HOLIDAY", 675, 438, SSD1963_BLACK, SSD1963_WHITE, 2);
+       draw_Bitmap(693, 371, holiday, 50, 35,SSD1963_BLUE);
+
+      
+     
+
+
+      //  SSD1963_drawLine(400,130, 400, 380, SSD1963_BLACK);
+      //  SSD1963_drawLine(30, 130, 770, 130, SSD1963_BLACK);
 
       //  LCD_command_WRITE(0xBE);   //set PWM for B/L
       //  LCD_data_WRITE(0x06);   //0x06
@@ -1371,99 +1644,110 @@ void app_main(void)
       //  LCD_command_WRITE(0xE5);
       //  vTaskDelay(2000/portTICK_RATE_MS);
 
-          for(float j=0; j<=16;j++)
+          //for(float j=0; j<=16;j++)
+          for(float j=0; j<1;j++)
           {
           char buf[10];
-          float fridge = 1.0+j;
-          //char buff[20];
-          float freezer = -15+j;
+          //float fridge = 1.0+j;
+          float fridge = 17;
+      
+          //float freezer = -15+j;
+          float freezer = 1.00;
 
-             ringMeter(fridge, 1, 17, 100, 150, 100, BLUE2RED);
-             ringMeter(freezer, -15, 1, 500, 150, 100, BLUE2RED);
+             ringMeter(fridge, 1, 17, 80, 130, 100, BLUE2RED);
+             ringMeter(freezer, -15, 1, 520, 130, 100, BLUE2RED);
 
           snprintf (buf, sizeof(buf), "%0.1f", fridge);
-          printText (buf, 160, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText (buf, 140, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+
+
           
-
-          // snprintf (buff, sizeof(buff), "%0.1f", freezer);
-          // printText (buff, 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
-          // printText ("      ", 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
-
           if (freezer==0.00)
           {
-          printText ("      ", 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
-          printText ("0.00", 565, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("      ", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("0.00", 585, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
           }
           else if (freezer == 1.00)
           {
-          printText ("      ", 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
-          printText ("1.00", 565, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("      ", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("1.00", 585, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
+
+          for(int i=0;i<5;i++)
+          {
+          draw_Bitmap(700, 300, alarm_, 24, 22,SSD1963_RED);
+          vTaskDelay(1000/portTICK_RATE_MS);
+          fillRoundRect (695,295,30,30,5,SSD1963_WHITE);
+          vTaskDelay(1000/portTICK_RATE_MS);
           }
+
+          }
+
              else if (freezer == -1.00)
           {
-          printText ("-1.0", 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("-1.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
           }
              else if (freezer == -2.00)
           {
-          printText ("-2.0", 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("-2.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
           }
              else if (freezer == -3.00)
           {
-          printText ("-3.0", 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("-3.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
           }
              else if (freezer == -4.00)
           {
-          printText ("-4.0", 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("-4.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
           }
              else if (freezer == -5.00)
           {
-          printText ("-5.0", 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("-5.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
           }
              else if (freezer == -6.00)
           {
-          printText ("-6.0", 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("-6.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
           }
              else if (freezer == -7.00)
           {
-          printText ("-7.0", 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("-7.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
           }
              else if (freezer == -8.00)
           {
-          printText ("-8.0", 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("-8.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
           }
              else if (freezer == -9.00)
           {
-          printText ("-9.0", 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("-9.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
           }
              else if (freezer == -10.00)
           {
-          printText ("-10.0", 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("-10.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
           }
              else if (freezer == -11.00)
           {
-          printText ("-11.0", 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("-11.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
           }
              else if (freezer == -12.00)
           {
-          printText ("-12.0", 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("-12.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
           }
              else if (freezer == -13.00)
           {
-          printText ("-13.0", 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("-13.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
           }
              else if (freezer == -14.00)
           {
-          printText ("-14.0", 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("-14.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
           }
              else if (freezer == -15.00)
           {
-          printText ("-15.0", 555, 235, SSD1963_BLACK, SSD1963_WHITE, 3);
+          printText ("-15.0", 575, 215, SSD1963_BLACK, SSD1963_WHITE, 3);
           }
           
           else {}
           
           }
-          //vTaskDelay (500/portTICK_RATE_MS);
+
+          vTaskDelay(600000/portTICK_RATE_MS);
 
        }
   
